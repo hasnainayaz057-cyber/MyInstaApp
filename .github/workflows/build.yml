@@ -13,7 +13,9 @@ jobs:
 
       - name: Extract Project Zip
         run: |
-          unzip MyInstaApp.zip -d extracted_project
+          mkdir -p extracted_project
+          unzip -q MyInstaApp.zip -d extracted_project
+          echo "Contents of root extraction:"
           ls -la extracted_project
 
       - name: Set up JDK 17
@@ -22,15 +24,23 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x extracted_project/gradlew
-
-      - name: Build Debug APK
-        run: cd extracted_project && ./gradlew assembleDebug
+      - name: Find and Build APK
+        run: |
+          # Locate the directory containing gradlew
+          GRADLEW_PATH=$(find extracted_project -name "gradlew" -type f | head -n 1)
+          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+          echo "Found gradlew at: $GRADLEW_PATH"
+          echo "Project directory is: $PROJECT_DIR"
+          
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: extracted_project/app/build/outputs/apk/debug/app-debug.apk
-          
+          path: |
+            extracted_project/**/app/build/outputs/apk/debug/app-debug.apk
+            extracted_project/**/build/outputs/apk/debug/*.apk
+            
