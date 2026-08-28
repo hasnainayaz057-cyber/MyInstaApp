@@ -20,12 +20,53 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Organize Project Structure
+      - name: Organize Project Structure & Create Gradle Configs
         run: |
           mkdir -p app/src/main/java app/src/main/res/values
           mv *.kt app/src/main/java/ 2>/dev/null || true
           mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
           mv strings.xml app/src/main/res/values/ 2>/dev/null || true
+
+          # Create settings.gradle if it doesn't exist
+          if [ ! -f settings.gradle ]; then
+            echo "include ':app'" > settings.gradle
+          fi
+
+          # Create root build.gradle if it doesn't exist
+          if [ ! -f build.gradle ]; then
+            cat << 'EOF' > build.gradle
+            plugins {
+                id 'com.android.application' version '8.2.0' apply false
+                id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
+            }
+            EOF
+          fi
+
+          # Create app/build.gradle if it doesn't exist
+          if [ ! -f app/build.gradle ]; then
+            cat << 'EOF' > app/build.gradle
+            plugins {
+                id 'com.android.application'
+                id 'org.jetbrains.kotlin.android'
+            }
+            android {
+                namespace 'com.example.myinstaapp'
+                compileSdk 34
+                defaultConfig {
+                    applicationId "com.example.myinstaapp"
+                    minSdk 24
+                    targetSdk 34
+                    versionCode 1
+                    versionName "1.0"
+                }
+            }
+            dependencies {
+                implementation 'androidx.core:core-ktx:1.12.0'
+                implementation 'androidx.appcompat:appcompat:1.6.1'
+                implementation 'com.google.android.material:material:1.11.0'
+            }
+            EOF
+          fi
 
       - name: Build Debug APK
         run: gradle assembleDebug
