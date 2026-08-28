@@ -11,41 +11,38 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Extract Project Zip
-        run: |
-          mkdir -p extracted_project
-          unzip -q MyInstaApp.zip -d extracted_project
-          echo "--- Root directory files ---"
-          ls -la
-          echo "--- Extracted project files ---"
-          ls -la extracted_project
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build Debug APK
+      - name: Organize Project Structure
         run: |
-          # If gradlew is nested one level deep, find it explicitly
-          if [ -f "extracted_project/gradlew" ]; then
-            cd extracted_project
-          else
-            # Enter the first subdirectory inside extracted_project
-            SUBDIR=$(ls -d extracted_project/*/ | head -n 1)
-            echo "Entering subdirectory: $SUBDIR"
-            cd "$SUBDIR"
-          fi
+          # Create standard Android directories if they don't exist
+          mkdir -p app/src/main/java app/src/main/res/values
           
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # Move Kotlin source files into the source directory
+          mv *.kt app/src/main/java/ 2>/dev/null || true
+          
+          # Move manifest and resource files into place if they are in root
+          mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
+          mv strings.xml app/src/main/res/values/ 2>/dev/null || true
+
+          echo "Files in root:"
+          ls -la
+          echo "Files in app/src/main:"
+          ls -la app/src/main
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: |
-            **/app/build/outputs/apk/debug/app-debug.apk
-            **/build/outputs/apk/debug/*.apk
-            
+          path: app/build/outputs/apk/debug/app-debug.apk
+          
