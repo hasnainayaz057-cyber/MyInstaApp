@@ -27,45 +27,33 @@ jobs:
           mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
           mv strings.xml app/src/main/res/values/ 2>/dev/null || true
 
-          # Create settings.gradle if it doesn't exist
           if [ ! -f settings.gradle ]; then
             echo "include ':app'" > settings.gradle
           fi
 
-          # Create root build.gradle if it doesn't exist
           if [ ! -f build.gradle ]; then
-            cat << 'EOF' > build.gradle
-            plugins {
-                id 'com.android.application' version '8.2.0' apply false
-                id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
-            }
-            EOF
+            echo "plugins {" > build.gradle
+            echo "    id 'com.android.application' version '8.2.0' apply false" >> build.gradle
+            echo "    id 'org.jetbrains.kotlin.android' version '1.9.0' apply false" >> build.gradle
+            echo "}" >> build.gradle
           fi
 
-          # Create app/build.gradle if it doesn't exist
           if [ ! -f app/build.gradle ]; then
-            cat << 'EOF' > app/build.gradle
-            plugins {
-                id 'com.android.application'
-                id 'org.jetbrains.kotlin.android'
-            }
-            android {
-                namespace 'com.example.myinstaapp'
-                compileSdk 34
-                defaultConfig {
-                    applicationId "com.example.myinstaapp"
-                    minSdk 24
-                    targetSdk 34
-                    versionCode 1
-                    versionName "1.0"
-                }
-            }
-            dependencies {
-                implementation 'androidx.core:core-ktx:1.12.0'
-                implementation 'androidx.appcompat:appcompat:1.6.1'
-                implementation 'com.google.android.material:material:1.11.0'
-            }
-            EOF
+            echo "plugins {" > app/build.gradle
+            echo "    id 'com.android.application'" >> app/build.gradle
+            echo "    id 'org.jetbrains.kotlin.android'" >> app/build.gradle
+            echo "}" >> app/build.gradle
+            echo "android {" >> app/build.gradle
+            echo "    namespace 'com.example.myinstaapp'" >> app/build.gradle
+            echo "    compileSdk 34" >> app/build.gradle
+            echo "    defaultConfig {" >> app/build.gradle
+            echo "        applicationId \"com.example.myinstaapp\"" >> app/build.gradle
+            echo "        minSdk 24" >> app/build.gradle
+            echo "        targetSdk 34" >> app/build.gradle
+            echo "        versionCode 1" >> app/build.gradle
+            echo "        versionName \"1.0\"" >> app/build.gradle
+            echo "    }" >> app/build.gradle
+            echo "}" >> app/build.gradle
           fi
 
       - name: Build Debug APK
