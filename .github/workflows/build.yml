@@ -29,13 +29,13 @@ jobs:
           mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
           mv strings.xml app/src/main/res/values/ 2>/dev/null || true
 
-          echo "Files in root:"
-          ls -la
-          echo "Files in app/src/main:"
-          ls -la app/src/main
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Generate Gradle Wrapper
+        run: |
+          # If gradlew doesn't exist, generate it automatically
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper --gradle-version 8.5
+          fi
+          chmod +x gradlew
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
