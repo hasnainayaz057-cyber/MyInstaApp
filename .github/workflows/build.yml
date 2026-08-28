@@ -52,6 +52,10 @@ jobs:
             echo "    id 'com.android.application'" >> app/build.gradle
             echo "    id 'org.jetbrains.kotlin.android'" >> app/build.gradle
             echo "}" >> app/build.gradle
+            echo "repositories {" >> app/build.gradle
+            echo "    google()" >> app/build.gradle
+            echo "    mavenCentral()" >> app/build.gradle
+            echo "}" >> app/build.gradle
             echo "android {" >> app/build.gradle
             echo "    namespace 'com.example.myinstaapp'" >> app/build.gradle
             echo "    compileSdk 34" >> app/build.gradle
