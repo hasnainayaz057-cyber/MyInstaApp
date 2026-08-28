@@ -28,7 +28,14 @@ jobs:
           mv strings.xml app/src/main/res/values/ 2>/dev/null || true
 
           if [ ! -f settings.gradle ]; then
-            echo "include ':app'" > settings.gradle
+            echo "pluginManagement {" > settings.gradle
+            echo "    repositories {" >> settings.gradle
+            echo "        google()" >> settings.gradle
+            echo "        mavenCentral()" >> settings.gradle
+            echo "        gradlePluginPortal()" >> settings.gradle
+            echo "    }" >> settings.gradle
+            echo "}" >> settings.gradle
+            echo "include ':app'" >> settings.gradle
           fi
 
           if [ ! -f build.gradle ]; then
