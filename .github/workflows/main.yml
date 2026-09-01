@@ -1,0 +1,608 @@
+Data Models (/app/src/main/java/com/example/data/model/Models.kt)concurrency:
+  package com.example.data.model
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+enum class MediaType {
+    PHOTO, VIDEO, REEL
+}
+
+enum class FeedFilter {
+    FOR_YOU, FOLLOWING, LATEST
+}
+
+enum class ActivityType {
+    LIKE, COMMENT, FOLLOW, MENTION
+}
+
+enum class ExploreCategory {
+    TRENDING, BALOCHISTAN, TOP_CREATORS, LANDSCAPES, SHORTS, ART_CULTURE, AMBIENT_SOUND
+}
+
+enum class BalooraAccent(val title: String, val primary: Long) {
+    GOLD("Zarwan Gold", 0xFFD4AF37),
+    AZURE("Makran Azure", 0xFF00B4D8),
+    CRIMSON("Chagai Crimson", 0xFFD62828),
+    EMERALD("Gwadar Emerald", 0xFF2A9D8F),
+    OBSIDIAN("Obsidian Monochrome", 0xFFE5E5E5)
+}
+
+data class InstagramAccount(
+    val username: String,
+    val displayName: String,
+    val bio: String,
+    val location: String = "Gwadar & Quetta",
+    val avatarRes: Int? = null,
+    val followersCount: Int = 12400,
+    val followingCount: Int = 380,
+    val postsCount: Int = 24,
+    val isVerified: Boolean = false,
+    val culturalTitle: String = "Creator"
+)
+
+data class UserProfile(
+    val username: String = "raskolnikov_h1",
+    val displayName: String = "Hasnain Ayaz",
+    val bio: String = "Architect of Baloora ✦ Exploring digital heritage, contemporary minimalism & Baloch landscapes ⛰️ Crafted with pride.",
+    val location: String = "Gwadar & Quetta",
+    val instagramHandle: String = "raskolnikov_h1",
+    val avatarRes: Int? = null,
+    val followersCount: Int = 28400,
+    val followingCount: Int = 412,
+    val postsCount: Int = 38,
+    val isVerified: Boolean = true,
+    val culturalTitle: String = "البلوشی Design Lab",
+    val isLoggedIn: Boolean = true
+)
+
+data class Post(
+    val id: String,
+    val authorName: String,
+    val authorHandle: String,
+    val authorAvatarRes: Int? = null,
+    val mediaType: MediaType = MediaType.PHOTO,
+    val imageRes: Int? = null,
+    val caption: String,
+    val location: String,
+    val timeAgo: String,
+    val likesCount: Int,
+    val commentsCount: Int,
+    val repostCount: Int = 0,
+    val isLiked: Boolean = false,
+    val isBookmarked: Boolean = false,
+    val audioTrack: String? = null,
+    val tags: List<String> = emptyList()
+)
+
+data class Story(
+    val id: String,
+    val authorName: String,
+    val authorHandle: String,
+    val authorAvatarRes: Int? = null,
+    val mediaRes: Int? = null,
+    val isSeen: Boolean = false,
+    val caption: String = ""
+)
+
+data class Comment(
+    val id: String,
+    val authorName: String,
+    val authorHandle: String,
+    val authorAvatarRes: Int? = null,
+    val text: String,
+    val timeAgo: String,
+    val likesCount: Int = 0,
+    val isLiked: Boolean = false
+)
+
+data class ActivityNotification(
+    val id: String,
+    val type: ActivityType,
+    val actorName: String,
+    val actorHandle: String,
+    val actorAvatarRes: Int? = null,
+    val targetPreviewRes: Int? = null,
+    val message: String,
+    val timeAgo: String,
+    val isFollowedBack: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "drafts")
+data class UserDraft(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val caption: String,
+    val mediaType: String,
+    val imageRes: Int?,
+    val location: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class UserSettings(
+    val isDarkMode: Boolean = true,
+    val isTrueOledBlack: Boolean = true,
+    val isPrivateAccount: Boolean = false,
+    val isGhostModeStories: Boolean = false,
+    val allowCommentsFromAnyone: Boolean = true,
+    val showActivityStatus: Boolean = true,
+    val highBitrateMedia: Boolean = true,
+    val cacheSizeMb: Float = 24.8f,
+    val accentTheme: BalooraAccent = BalooraAccent.GOLD,
+    val fontScaleRatio: Float = 1.0f,
+    val compactFeedDensity: Boolean = false
+Instagram Login Screen (/app/src/main/java/com/example/ui/screens/InstagramLoginScreen.kt)
+package com.example.ui.screens
+
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.R
+import com.example.data.model.InstagramAccount
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+val InstaGradient = Brush.linearGradient(
+    colors = listOf(
+        Color(0xFF833AB4),
+        Color(0xFFFD1D1D),
+        Color(0xFFF77737),
+        Color(0xFFFFDC80)
+    )
+)
+
+val MetaBlue = Color(0xFF1877F2)
+
+@Composable
+fun InstagramLoginScreen(
+    savedAccounts: List<InstagramAccount>,
+    onLoginSuccess: (handle: String, displayName: String?, bio: String?) -> Unit,
+    onSkipToGuest: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+    var inputUsername by remember { mutableStateOf("raskolnikov_h1") }
+    var inputPassword by remember { mutableStateOf("••••••••") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isSignUpDialogOpen by remember { mutableStateOf(false) }
+    var isForgotPasswordOpen by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = modifier
+            .fillMaxSize()
+            .testTag("instagram_login_screen"),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Instagram Gradient Emblem
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(InstaGradient)
+                        .padding(3.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(21.dp))
+                            .background(Color(0xFF121212)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .border(3.5.dp, Color.White, RoundedCornerShape(14.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .border(3.5.dp, Color.White, CircleShape)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(5.dp)
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 4.dp, end = 4.dp)
+                                    .background(Color.White, CircleShape)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Instagram",
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Text(
+                    text = "Sign in with your Instagram credentials to access your feed & stories",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Quick 1-Tap Log In with Saved Accounts
+            if (savedAccounts.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .padding(14.dp)
+                ) {
+                    Text(
+                        text = "CONTINUE AS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 1.2.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    savedAccounts.take(2).forEach { account ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    scope.launch {
+                                        isLoading = true
+                                        delay(400)
+                                        isLoading = false
+                                        onLoginSuccess(account.username, account.displayName, account.bio)
+                                    }
+                                }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .clip(CircleShape)
+                                        .background(InstaGradient)
+                                        .padding(2.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = account.avatarRes ?: R.drawable.img_creator_avatar),
+                                        contentDescription = account.displayName,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "@${account.username}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        if (account.isVerified) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = "Verified",
+                                                tint = Color(0xFF0095F6),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = account.displayName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        isLoading = true
+                                        delay(400)
+                                        isLoading = false
+                                        onLoginSuccess(account.username, account.displayName, account.bio)
+                                    }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0095F6),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(text = "Log In", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
+            // Username & Password Fields
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = inputUsername,
+                    onValueChange = { inputUsername = it },
+                    label = { Text("Username, phone, or email") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = inputPassword,
+                    onValueChange = { inputPassword = it },
+                    label = { Text("Password") },
+                    singleLine = true,
+                    visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                            Icon(
+                                imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        if (inputUsername.isNotBlank()) {
+                            scope.launch {
+                                isLoading = true
+                                delay(500)
+                                isLoading = false
+                                onLoginSuccess(inputUsername.trim(), null, null)
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0095F6)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
+                    } else {
+                        Text("Log In", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Footer
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Don't have an account? ", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = "Sign up",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0095F6),
+                        modifier = Modifier.clickable { isSignUpDialogOpen = true }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = "∞ Meta", fontWeight = FontWeight.Bold)
+            }
+        }package com.example.ui.components
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.R
+import com.example.data.model.InstagramAccount
+import com.example.data.model.UserProfile
+import com.example.ui.screens.InstaGradient
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AccountSwitcherBottomSheet(
+    currentProfile: UserProfile,
+    savedAccounts: List<InstagramAccount>,
+    onSelectAccount: (username: String) -> Unit,
+    onAddNewAccount: () -> Unit,
+    onLogout: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(bottom = 28.dp)
+        ) {
+            Text(
+                text = "Switch Instagram Accounts",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 14.dp)
+            )
+
+            savedAccounts.forEach { account ->
+                val isCurrent = account.username.equals(currentProfile.instagramHandle, ignoreCase = true)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable { onSelectAccount(account.username) }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(if (isCurrent) InstaGradient else SolidColor(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)))
+                                .padding(2.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = account.avatarRes ?: R.drawable.img_creator_avatar),
+                                contentDescription = account.displayName,
+                                modifier = Modifier.fillMaxSize().clip(CircleShape)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column {
+                            Text(text = "@${account.username}", fontWeight = FontWeight.Bold)
+                            Text(text = account.displayName, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
+                    Icon(
+                        imageVector = if (isCurrent) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                        contentDescription = null,
+                        tint = if (isCurrent) Color(0xFF0095F6) else Color.Gray
+                    )
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            // Add Account
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onAddNewAccount() }
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Add Instagram Account", fontWeight = FontWeight.SemiBold)
+            }
+
+            // Log Out
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onLogout() }
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Log Out", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+    }
+}
